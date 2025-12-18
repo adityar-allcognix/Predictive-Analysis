@@ -1,0 +1,115 @@
+{
+  "ruleset_name": "auto-loss-prevention",
+  "policy_type": "AUTO",
+  "version": "1.0.0",
+  "description": "AUTO deterministic LRI model. Uses telematics, IoT, climate, claims, and exposure. No ML, no randomness.",
+  "weights": {
+    "claims_history": 0.35,
+    "telematics_behavior": 0.25,
+    "iot_asset_health": 0.20,
+    "climate_hazard": 0.15,
+    "policy_exposure": 0.05
+  },
+  "risk_bands": [
+    { "band": "LOW", "min": 0, "max": 34 },
+    { "band": "MEDIUM", "min": 35, "max": 69 },
+    { "band": "HIGH", "min": 70, "max": 100 }
+  ],
+  "components": {
+    "claims_history": {
+      "lookback_months": 36,
+      "frequency": {
+        "zero_claims_score": 0,
+        "one_claim_score": 35,
+        "two_claims_score": 65,
+        "three_or_more_claims_score": 90
+      },
+      "severity": {
+        "low_usd": 1000,
+        "medium_usd": 10000,
+        "high_usd": 50000,
+        "low_score": 10,
+        "medium_score": 45,
+        "high_score": 85,
+        "extreme_score": 100
+      },
+      "blend": { "frequency_weight": 0.55, "severity_weight": 0.45 }
+    },
+    "telematics_behavior": {
+      "event_rates_per_100_miles": {
+        "harsh_braking": { "low": 1.0, "medium": 3.0, "high": 6.0 },
+        "speeding": { "low": 1.0, "medium": 4.0, "high": 8.0 },
+        "distracted": { "low": 0.5, "medium": 2.0, "high": 4.0 }
+      },
+      "night_driving_pct": { "low": 10.0, "medium": 25.0, "high": 40.0 },
+      "sub_weights": { "harsh_braking": 0.25, "speeding": 0.35, "distracted": 0.25, "night": 0.15 }
+    },
+    "iot_asset_health": {
+      "health_score": { "good_min": 80, "warning_min": 60, "critical_min": 40 },
+      "anomaly_count": { "low": 1, "medium": 3, "high": 6 },
+      "sub_weights": { "health": 0.70, "anomalies": 0.30 }
+    },
+    "climate_hazard": { "missing_hazard_index_default": 50 },
+    "policy_exposure": {
+      "asset_value_usd": { "low": 10000, "medium": 50000, "high": 150000 },
+      "deductible_ratio": { "low": 0.01, "medium": 0.03, "high": 0.06 },
+      "sub_weights": { "asset_value": 0.65, "deductible_ratio": 0.35 }
+    }
+  },
+  "rules": [
+    {
+      "rule_id": "AUTO-R-001",
+      "name": "High risk coaching",
+      "conditions": {
+        "all": [
+          { "path": "risk.band", "op": "eq", "value": "HIGH" },
+          { "path": "components.telematics_behavior.normalized_score", "op": "gte", "value": 70 }
+        ]
+      },
+      "action": {
+        "action_type": "DRIVER_COACHING",
+        "priority": 1,
+        "action_payload": { "channel": "email", "program": "safe-driving", "duration_days": 30 },
+        "rationale": "AUTO: High overall risk and elevated telematics behavior risk; recommend driver coaching program."
+      }
+    },
+    {
+      "rule_id": "AUTO-R-002",
+      "name": "Asset inspection",
+      "conditions": {
+        "any": [
+          { "path": "components.iot_asset_health.normalized_score", "op": "gte", "value": 75 },
+          { "path": "inputs.iot.anomaly_count", "op": "gte", "value": 6 }
+        ]
+      },
+      "action": {
+        "action_type": "ASSET_INSPECTION",
+        "priority": 2,
+        "action_payload": { "window_days": 14, "inspection_type": "preventive" },
+        "rationale": "AUTO: IoT asset signals indicate elevated failure risk; recommend inspection/maintenance within 14 days."
+      }
+    },
+    {
+      "rule_id": "AUTO-R-003",
+      "name": "Climate mitigation checklist",
+      "conditions": { "all": [{ "path": "components.climate_hazard.normalized_score", "op": "gte", "value": 70 }] },
+      "action": {
+        "action_type": "CLIMATE_MITIGATION",
+        "priority": 3,
+        "action_payload": { "delivery": "dashboard", "content": "region-mitigation-checklist" },
+        "rationale": "AUTO: High climate hazard index in policy region; provide mitigation checklist."
+      }
+    },
+    {
+      "rule_id": "AUTO-R-004",
+      "name": "Claims review",
+      "conditions": { "all": [{ "path": "components.claims_history.normalized_score", "op": "gte", "value": 80 }] },
+      "action": {
+        "action_type": "CLAIMS_REVIEW",
+        "priority": 2,
+        "action_payload": { "review_type": "loss-prevention", "queue": "risk-ops" },
+        "rationale": "AUTO: Claims frequency/severity indicates elevated recurring loss exposure; initiate review."
+      }
+    }
+  ]
+}

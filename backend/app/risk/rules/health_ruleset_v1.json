@@ -1,0 +1,50 @@
+{
+  "ruleset_name": "health-loss-prevention",
+  "policy_type": "HLTH",
+  "version": "1.0.0",
+  "description": "HLTH deterministic LRI model. Uses age, claims severity, and chronic indicators. No ML, no randomness.",
+  "weights": {
+    "age_risk": 0.35,
+    "claims_severity": 0.40,
+    "chronic_indicators": 0.25
+  },
+  "risk_bands": [
+    { "band": "LOW", "min": 0, "max": 34 },
+    { "band": "MEDIUM", "min": 35, "max": 69 },
+    { "band": "HIGH", "min": 70, "max": 100 }
+  ],
+  "components": {
+    "age_risk": { "low": 30, "medium": 45, "high": 60 },
+    "claims_severity": { "low_usd": 5000, "medium_usd": 20000, "high_usd": 75000 },
+    "chronic_indicators": { "none_score": 10, "one_score": 45, "two_score": 70, "three_plus_score": 90 }
+  },
+  "rules": [
+    {
+      "rule_id": "HLTH-R-001",
+      "name": "Preventive care outreach",
+      "conditions": {
+        "all": [
+          { "path": "components.chronic_indicators.normalized_score", "op": "gte", "value": 70 },
+          { "path": "risk.band", "op": "in", "value": ["MEDIUM", "HIGH"] }
+        ]
+      },
+      "action": {
+        "action_type": "PREVENTIVE_CARE_OUTREACH",
+        "priority": 2,
+        "action_payload": { "channel": "sms", "program": "chronic-care", "duration_days": 90 },
+        "rationale": "HLTH: Chronic indicators elevate future utilization risk; enroll member in preventive care outreach."
+      }
+    },
+    {
+      "rule_id": "HLTH-R-002",
+      "name": "Care coordination",
+      "conditions": { "all": [{ "path": "components.claims_severity.normalized_score", "op": "gte", "value": 80 }] },
+      "action": {
+        "action_type": "CARE_COORDINATION",
+        "priority": 1,
+        "action_payload": { "team": "nurse-care", "window_days": 7 },
+        "rationale": "HLTH: High recent claims severity suggests elevated near-term risk; initiate care coordination."
+      }
+    }
+  ]
+}

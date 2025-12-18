@@ -1,0 +1,50 @@
+{
+  "ruleset_name": "life-loss-prevention",
+  "policy_type": "LIFE",
+  "version": "1.0.0",
+  "description": "LIFE deterministic LRI model. Uses age, tenure, and mortality index from static table. No ML, no randomness.",
+  "weights": {
+    "age_risk": 0.35,
+    "tenure_risk": 0.20,
+    "mortality_index": 0.45
+  },
+  "risk_bands": [
+    { "band": "LOW", "min": 0, "max": 34 },
+    { "band": "MEDIUM", "min": 35, "max": 69 },
+    { "band": "HIGH", "min": 70, "max": 100 }
+  ],
+  "components": {
+    "age_risk": { "low": 35, "medium": 50, "high": 65 },
+    "tenure_years": { "new_max": 2, "mid_max": 7 },
+    "mortality_index": { "missing_default": 50 }
+  },
+  "rules": [
+    {
+      "rule_id": "LIFE-R-001",
+      "name": "Wellness check-in",
+      "conditions": {
+        "all": [
+          { "path": "risk.band", "op": "eq", "value": "HIGH" },
+          { "path": "components.mortality_index.normalized_score", "op": "gte", "value": 70 }
+        ]
+      },
+      "action": {
+        "action_type": "WELLNESS_CHECKIN",
+        "priority": 2,
+        "action_payload": { "channel": "email", "program": "wellness", "window_days": 30 },
+        "rationale": "LIFE: Elevated mortality index in static table; propose wellness check-in and resources."
+      }
+    },
+    {
+      "rule_id": "LIFE-R-002",
+      "name": "Underwriting review",
+      "conditions": { "all": [{ "path": "components.age_risk.normalized_score", "op": "gte", "value": 80 }] },
+      "action": {
+        "action_type": "UNDERWRITING_REVIEW",
+        "priority": 1,
+        "action_payload": { "queue": "life-risk-ops" },
+        "rationale": "LIFE: High age-based risk score; recommend underwriting review for targeted guidance."
+      }
+    }
+  ]
+}
