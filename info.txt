@@ -1,0 +1,5 @@
+IoT Asset Health: 92 (HIGH) - Device showing 6 anomalies, health score 37
+Climate Hazard: 72 (HIGH) - Flood risk in US-FL region
+Claims History: 56 (MEDIUM) - 2 claims in 36 months, $5,100 paid
+Policy Exposure: 55 (MEDIUM) - $55k vehicle, $100k coverage
+Telematics: 15 (LOW) - Good driver! 20.3% night driving, low speeding
