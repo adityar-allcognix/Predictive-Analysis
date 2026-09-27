@@ -24,7 +24,7 @@ UPDATE customers SET email = 'arjun.gupta@example.com', phone_number = '+91-9876
 UPDATE customers SET email = 'pooja.iyer@example.com', phone_number = '+91-9876543219' WHERE customer_id = 'CUST-IN-0010';
 
 -- Add demo account with known credentials for testing
-UPDATE customers SET email = 'demo@omnineura.com', phone_number = '+91-9999999999', full_name = 'Demo User' 
+UPDATE customers SET email = 'demo@allcognix.com', phone_number = '+91-9999999999', full_name = 'Demo User' 
 WHERE customer_id = 'CUST-IN-0001';
 
 COMMIT;
